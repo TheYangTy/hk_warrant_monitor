@@ -346,6 +346,10 @@ logs/*.log
 - 外网访问看板时优先使用 Tailscale、Cloudflare Access 等受控入口。
 - 不要直接把 `8765` 端口裸露到公网。
 
+## Contributing
+
+本项目使用简单 Git 工作流和 Conventional Commits。分支命名、提交规范、AI 辅助开发原则和 PR 模板见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
 ## Roadmap
 
 - [x] 自选正股管理
