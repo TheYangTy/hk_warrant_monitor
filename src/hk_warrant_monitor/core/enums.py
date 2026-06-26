@@ -34,6 +34,10 @@ class Strength(StrEnum):
 
 
 class SignalAction(StrEnum):
+    WATCH_CALL = "WATCH_CALL"
+    WATCH_PUT = "WATCH_PUT"
+    TRY_CALL = "TRY_CALL"
+    TRY_PUT = "TRY_PUT"
     BUY_CALL = "BUY_CALL"
     BUY_PUT = "BUY_PUT"
     HOLD = "HOLD"
@@ -46,4 +50,3 @@ class PushLevel(StrEnum):
     INFO = "INFO"
     IMPORTANT = "IMPORTANT"
     URGENT = "URGENT"
-

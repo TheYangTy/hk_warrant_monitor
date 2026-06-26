@@ -36,7 +36,7 @@ class IntradayScanJob:
         self.push_service = push_service
         self.logger = logger
         self.indicators = IndicatorCalculator()
-        self.trend_engine = TrendEngine()
+        self.trend_engine = TrendEngine(settings)
         self.signal_engine = SignalEngine(settings)
         self.product_filter = ProductFilter(settings)
         self.analysis = AnalysisService()
@@ -71,16 +71,18 @@ class IntradayScanJob:
                 signal = self._attach_product(signal, products)
                 self._save_signal(signal)
 
-                if signal.action != SignalAction.HOLD:
+                if self._should_push_signal(signal):
                     fallback_message = self.analysis.build_message(snapshot, trend, signal, products)
                     message = self.ai_analysis.maybe_build_message(snapshot, trend, signal, products, fallback_message)
-                    self.push_service.push(
-                        PushLevel.IMPORTANT,
+                    pushed = self.push_service.push(
+                        self._push_level_for_signal(signal),
                         "trade_signal",
                         item.code,
                         f"{snapshot.name or item.name or item.code} {signal.action.value}",
                         message,
                     )
+                    if pushed:
+                        self._mark_signal_pushed(signal)
                 signals.append(signal)
             self._maybe_push_quiet_intraday_summary(watch_items)
             self._set_runtime_state("last_scan_status", f"ok: signals={len(signals)}")
@@ -99,10 +101,30 @@ class IntradayScanJob:
         signal: TradeSignal,
         products: list[DerivativeProduct],
     ) -> TradeSignal:
-        if signal.action not in (SignalAction.BUY_CALL, SignalAction.BUY_PUT):
+        if signal.action not in (SignalAction.BUY_CALL, SignalAction.BUY_PUT, SignalAction.TRY_CALL, SignalAction.TRY_PUT):
             return signal
         if products:
             return signal
+        if signal.action == SignalAction.TRY_CALL:
+            return TradeSignal(
+                action=SignalAction.WATCH_CALL,
+                confidence=signal.confidence,
+                reason=f"{signal.reason}，但暂无符合流动性和风险条件的窝轮/牛熊证执行工具，先列为观察",
+                risk=signal.risk,
+                underlying_code=signal.underlying_code,
+                product_code=None,
+                details={**signal.details, "blocked_reason": "no_qualified_execution_product"},
+            )
+        if signal.action == SignalAction.TRY_PUT:
+            return TradeSignal(
+                action=SignalAction.WATCH_PUT,
+                confidence=signal.confidence,
+                reason=f"{signal.reason}，但暂无符合流动性和风险条件的窝轮/牛熊证执行工具，先列为观察",
+                risk=signal.risk,
+                underlying_code=signal.underlying_code,
+                product_code=None,
+                details={**signal.details, "blocked_reason": "no_qualified_execution_product"},
+            )
         return TradeSignal(
             action=SignalAction.HOLD,
             confidence=signal.confidence,
@@ -139,7 +161,14 @@ class IntradayScanJob:
         return indicators, frames
 
     def _select_products(self, snapshot: MarketSnapshot, signal: TradeSignal) -> list[DerivativeProduct]:
-        if signal.action not in (SignalAction.BUY_CALL, SignalAction.BUY_PUT):
+        if signal.action not in (
+            SignalAction.BUY_CALL,
+            SignalAction.BUY_PUT,
+            SignalAction.TRY_CALL,
+            SignalAction.TRY_PUT,
+            SignalAction.WATCH_CALL,
+            SignalAction.WATCH_PUT,
+        ):
             return []
         products = self.futu.discover_related_products(snapshot.code)
         for product in products:
@@ -271,6 +300,54 @@ class IntradayScanJob:
                 dumps_json(signal.details),
             ),
         )
+
+    def _should_push_signal(self, signal: TradeSignal) -> bool:
+        if signal.action == SignalAction.HOLD:
+            return False
+        return not self._signal_in_cooldown(signal)
+
+    def _push_level_for_signal(self, signal: TradeSignal) -> PushLevel:
+        if signal.action in (SignalAction.STOP_LOSS,):
+            return PushLevel.URGENT
+        if signal.action in (
+            SignalAction.BUY_CALL,
+            SignalAction.BUY_PUT,
+            SignalAction.TRY_CALL,
+            SignalAction.TRY_PUT,
+            SignalAction.TAKE_PROFIT,
+            SignalAction.ADD_POSITION,
+        ):
+            return PushLevel.IMPORTANT
+        return PushLevel.INFO
+
+    def _signal_in_cooldown(self, signal: TradeSignal) -> bool:
+        minutes = self._cooldown_minutes_for_signal(signal.action)
+        if minutes <= 0:
+            return False
+        key = self._signal_push_state_key(signal)
+        row = self.db.fetchone("SELECT value FROM runtime_state WHERE key = ?", (key,))
+        if row is None or not row["value"]:
+            return False
+        try:
+            last = datetime.fromisoformat(row["value"])
+        except ValueError:
+            return False
+        return (datetime.now() - last).total_seconds() < minutes * 60
+
+    def _mark_signal_pushed(self, signal: TradeSignal) -> None:
+        self._set_runtime_state(self._signal_push_state_key(signal), datetime.now().isoformat(timespec="seconds"))
+
+    def _signal_push_state_key(self, signal: TradeSignal) -> str:
+        safe_code = signal.underlying_code.replace(".", "_")
+        return f"last_push_{safe_code}_{signal.action.value}"
+
+    def _cooldown_minutes_for_signal(self, action: SignalAction) -> int:
+        strategy = self.settings.get("strategy", {})
+        if action in (SignalAction.WATCH_CALL, SignalAction.WATCH_PUT):
+            return int(strategy.get("watch_push_cooldown_minutes", 15))
+        if action in (SignalAction.TRY_CALL, SignalAction.TRY_PUT):
+            return int(strategy.get("try_push_cooldown_minutes", 10))
+        return int(strategy.get("buy_push_cooldown_minutes", 15))
 
     def _set_runtime_state(self, key: str, value: str) -> None:
         try:

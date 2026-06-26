@@ -36,6 +36,10 @@ class AnalysisService:
 
     def _action_text(self, action: SignalAction) -> str:
         return {
+            SignalAction.WATCH_CALL: "观察买购/牛证机会",
+            SignalAction.WATCH_PUT: "观察买沽/熊证机会",
+            SignalAction.TRY_CALL: "小仓试探买购/牛证机会",
+            SignalAction.TRY_PUT: "小仓试探买沽/熊证机会",
             SignalAction.BUY_CALL: "关注买购/牛证机会",
             SignalAction.BUY_PUT: "关注买沽/熊证机会",
             SignalAction.HOLD: "继续观察",
@@ -54,6 +58,7 @@ class AnalysisService:
             "vwap_score": "VWAP",
             "orderbook_score": "盘口",
             "breakout_score": "突破",
+            "intraday_strength_score": "盘中强度",
             "volatility_score": "波动",
             "chase_penalty": "追高惩罚",
         }

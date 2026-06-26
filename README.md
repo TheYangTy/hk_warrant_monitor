@@ -265,6 +265,12 @@ max_iv = 90.0
 min_leverage = 2.0
 max_leverage = 12.0
 
+[strategy]
+mode = "BALANCED"
+try_confidence_threshold = 62
+watch_confidence_threshold = 55
+chase_penalty_factor = 0.6
+
 [summary]
 enabled = true
 quiet_minutes = 30

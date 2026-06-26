@@ -25,9 +25,9 @@ class ProductFilter:
         return sorted(filtered, key=self._score, reverse=True)
 
     def _matches_action(self, product: DerivativeProduct, action: SignalAction) -> bool:
-        if action == SignalAction.BUY_CALL:
+        if action in (SignalAction.BUY_CALL, SignalAction.TRY_CALL, SignalAction.WATCH_CALL):
             return product.product_type in (ProductType.CALL_WARRANT, ProductType.BULL_CBBC)
-        if action == SignalAction.BUY_PUT:
+        if action in (SignalAction.BUY_PUT, SignalAction.TRY_PUT, SignalAction.WATCH_PUT):
             return product.product_type in (ProductType.PUT_WARRANT, ProductType.BEAR_CBBC)
         return False
 

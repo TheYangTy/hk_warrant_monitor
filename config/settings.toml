@@ -41,6 +41,17 @@ buy_confidence_threshold = 70
 take_profit_pct = 25.0
 stop_loss_pct = -12.0
 
+[strategy]
+mode = "BALANCED"
+try_confidence_threshold = 62
+watch_confidence_threshold = 55
+strong_intraday_change_pct = 4.0
+strong_breakout_score = 10
+chase_penalty_factor = 0.6
+watch_push_cooldown_minutes = 15
+try_push_cooldown_minutes = 10
+buy_push_cooldown_minutes = 15
+
 [summary]
 enabled = true
 quiet_minutes = 30

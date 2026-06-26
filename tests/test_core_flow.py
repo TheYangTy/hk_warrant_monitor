@@ -79,6 +79,18 @@ class CoreFlowTest(unittest.TestCase):
         self.assertEqual(signal.underlying_code, "HK.00700")
         self.assertIsNone(signal.product_code)
 
+    def test_balanced_signal_has_try_layer(self):
+        engine = SignalEngine(SETTINGS)
+        item = WatchItem("HK.00700", "腾讯控股", Direction.LONG, RiskLevel.MEDIUM, False)
+        signal = engine.generate(item, TrendResult(Trend.BULLISH, 66, Strength.MEDIUM, {"source": "underlying"}))
+        self.assertEqual(signal.action, SignalAction.TRY_CALL)
+
+    def test_neutral_but_positive_signal_has_watch_layer(self):
+        engine = SignalEngine(SETTINGS)
+        item = WatchItem("HK.00700", "腾讯控股", Direction.LONG, RiskLevel.MEDIUM, False)
+        signal = engine.generate(item, TrendResult(Trend.NEUTRAL, 57, Strength.WEAK, {"source": "underlying"}))
+        self.assertEqual(signal.action, SignalAction.WATCH_CALL)
+
     def test_product_filter_uses_signal_direction_as_execution_tool(self):
         products = [
             DerivativeProduct("HK.00700", "HK.CALL", "购", ProductType.CALL_WARRANT, turnover=500000, leverage=5, strike_price=102, expire_date="2099-01-01", iv=40, street_ratio=20, spread=0.002, last_price=0.1),

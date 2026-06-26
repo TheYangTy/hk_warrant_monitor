@@ -7,6 +7,12 @@ from hk_warrant_monitor.core.models import IndicatorSnapshot, MarketSnapshot, Tr
 
 
 class TrendEngine:
+    def __init__(self, settings: dict | None = None):
+        strategy = (settings or {}).get("strategy", {})
+        self.chase_penalty_factor = float(strategy.get("chase_penalty_factor", 1.0))
+        self.strong_intraday_change_pct = float(strategy.get("strong_intraday_change_pct", 4.0))
+        self.strong_breakout_score = int(strategy.get("strong_breakout_score", 10))
+
     def analyze(
         self,
         snapshot: MarketSnapshot,
@@ -28,8 +34,9 @@ class TrendEngine:
         vwap_score = self._vwap_score(primary, snapshot.last_price)
         orderbook_score = self._orderbook_score(snapshot)
         breakout_score = self._breakout_score(snapshot.last_price, kline_frames or {})
+        intraday_strength_score = self._intraday_strength_score(snapshot, breakout_score, volume_score)
         volatility_score = self._volatility_score(snapshot, primary)
-        chase_penalty = self._chase_penalty(snapshot, primary, kline_frames or {})
+        chase_penalty = round(self._chase_penalty(snapshot, primary, kline_frames or {}) * self.chase_penalty_factor)
 
         score += (
             ma_score
@@ -40,6 +47,7 @@ class TrendEngine:
             + vwap_score
             + orderbook_score
             + breakout_score
+            + intraday_strength_score
             + volatility_score
             + chase_penalty
         )
@@ -56,6 +64,7 @@ class TrendEngine:
                 "vwap_score": vwap_score,
                 "orderbook_score": orderbook_score,
                 "breakout_score": breakout_score,
+                "intraday_strength_score": intraday_strength_score,
                 "volatility_score": volatility_score,
                 "chase_penalty": chase_penalty,
                 "snapshot_change_rate": snapshot.change_rate,
@@ -165,6 +174,14 @@ class TrendEngine:
             return 4
         if near_low:
             return -4
+        return 0
+
+    def _intraday_strength_score(self, snapshot: MarketSnapshot, breakout_score: int, volume_score: int) -> int:
+        change = snapshot.change_rate
+        if change >= self.strong_intraday_change_pct and breakout_score >= self.strong_breakout_score:
+            return 6 if volume_score >= 5 else 4
+        if change <= -self.strong_intraday_change_pct and breakout_score <= -self.strong_breakout_score:
+            return -6 if volume_score <= -5 else -4
         return 0
 
     def _volatility_score(self, snapshot: MarketSnapshot, indicator: IndicatorSnapshot) -> int:

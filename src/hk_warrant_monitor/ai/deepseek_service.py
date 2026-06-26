@@ -69,11 +69,21 @@ class DeepSeekAnalysisService:
             return False
         if self.settings.get("provider") != "deepseek":
             return False
-        if signal.action not in (SignalAction.BUY_CALL, SignalAction.BUY_PUT, SignalAction.TAKE_PROFIT, SignalAction.STOP_LOSS):
+        if signal.action not in (
+            SignalAction.BUY_CALL,
+            SignalAction.BUY_PUT,
+            SignalAction.TRY_CALL,
+            SignalAction.TRY_PUT,
+            SignalAction.TAKE_PROFIT,
+            SignalAction.STOP_LOSS,
+        ):
             return False
-        if signal.confidence < int(self.settings.get("min_confidence", 72)):
+        min_confidence = int(self.settings.get("min_confidence", 72))
+        if signal.action in (SignalAction.TRY_CALL, SignalAction.TRY_PUT):
+            min_confidence = int(self.settings.get("try_min_confidence", 62))
+        if signal.confidence < min_confidence:
             return False
-        if signal.action in (SignalAction.BUY_CALL, SignalAction.BUY_PUT) and not products:
+        if signal.action in (SignalAction.BUY_CALL, SignalAction.BUY_PUT, SignalAction.TRY_CALL, SignalAction.TRY_PUT) and not products:
             return False
         if self._daily_count() >= int(self.settings.get("daily_limit", 50)):
             return False
