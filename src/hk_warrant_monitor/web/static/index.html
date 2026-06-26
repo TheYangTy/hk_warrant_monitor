@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>港股窝轮监控</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="mark">HK</div>
+          <div>
+            <strong>Warrant Monitor</strong>
+            <span>Local console</span>
+          </div>
+        </div>
+        <nav>
+          <a href="#overview">总览</a>
+          <a href="#watchlist">关注</a>
+          <a href="#signals">信号</a>
+          <a href="#logs">日志</a>
+        </nav>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <h1>港股窝轮/牛熊证看板</h1>
+            <p>本地运行，手机与桌面共用同一套关注列表。</p>
+          </div>
+          <div class="actions">
+            <button id="refreshBtn" class="secondary">刷新</button>
+            <button id="testFeishuBtn">测试飞书</button>
+          </div>
+        </header>
+
+        <section id="overview" class="metrics-grid">
+          <div class="metric">
+            <span>启用关注</span>
+            <strong id="enabledWatchCount">-</strong>
+          </div>
+          <div class="metric">
+            <span>扫描间隔</span>
+            <strong id="scanInterval">-</strong>
+          </div>
+          <div class="metric">
+            <span>AI 调用</span>
+            <strong id="aiCalls">-</strong>
+          </div>
+          <div class="metric">
+            <span>AI Tokens</span>
+            <strong id="aiTokens">-</strong>
+          </div>
+          <div class="metric">
+            <span>最后扫描</span>
+            <strong id="lastScanAt">-</strong>
+          </div>
+          <div class="metric">
+            <span>扫描状态</span>
+            <strong id="scanStatus">-</strong>
+          </div>
+        </section>
+
+        <section class="panel network-panel">
+          <div class="panel-head">
+            <div>
+              <h2>访问地址</h2>
+              <p>手机需要和电脑连接同一 Wi-Fi，并使用局域网地址访问。</p>
+            </div>
+          </div>
+          <div id="networkUrls" class="network-list"></div>
+        </section>
+
+        <section id="watchlist" class="layout-grid">
+          <div class="panel wide">
+            <div class="panel-head">
+              <div>
+                <h2>关注列表</h2>
+                <p>正股决定方向，窝轮/牛熊证只作为执行工具。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>方向</th>
+                    <th>风险</th>
+                    <th>隔夜</th>
+                    <th>状态</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="watchlistRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <form id="watchForm" class="panel form-panel">
+            <h2>新增关注</h2>
+            <label>股票代码<input name="code" placeholder="02513.HK" required /></label>
+            <label>名称<input name="name" placeholder="智谱" /></label>
+            <label>方向
+              <select name="direction">
+                <option value="LONG">LONG 买购/牛证</option>
+                <option value="SHORT">SHORT 买沽/熊证</option>
+                <option value="BOTH">BOTH 多空都看</option>
+              </select>
+            </label>
+            <label>风险
+              <select name="riskLevel">
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+                <option value="HIGH">HIGH</option>
+              </select>
+            </label>
+            <label class="check-row"><input type="checkbox" name="allowOvernight" /> 允许隔夜</label>
+            <button type="submit">保存关注</button>
+          </form>
+        </section>
+
+        <section id="signals" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>最近信号</h2>
+              <p>显示规则引擎和 AI 推送前的最新记录。</p>
+            </div>
+          </div>
+          <div id="signalList" class="signal-list"></div>
+        </section>
+
+        <section id="logs" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>运行日志</h2>
+              <p>最近 120 行，本机日志文件。</p>
+            </div>
+          </div>
+          <pre id="logView"></pre>
+        </section>
+      </main>
+    </div>
+
+    <nav class="mobile-nav">
+      <a href="#overview">总览</a>
+      <a href="#watchlist">关注</a>
+      <a href="#signals">信号</a>
+      <a href="#logs">日志</a>
+    </nav>
+    <div id="toast" class="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

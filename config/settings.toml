@@ -1,0 +1,70 @@
+[app]
+name = "hk_warrant_monitor"
+timezone = "Asia/Hong_Kong"
+
+[database]
+path = "data/hk_warrant_monitor.db"
+
+[futu]
+host_env = "FUTU_HOST"
+port_env = "FUTU_PORT"
+default_host = "127.0.0.1"
+default_port = 11111
+
+[market]
+trading_start = "09:30:00"
+trading_end = "16:00:00"
+midday_break_start = "12:00:00"
+midday_break_end = "13:00:00"
+
+[scan]
+interval_seconds = 60
+kline_count = 120
+kline_types = ["K_1M", "K_5M", "K_15M"]
+
+[scan.index_codes]
+hsi = "HK.800000"
+hstech = "HK.800700"
+
+[products]
+min_turnover = 100000
+max_spread_pct = 8.0
+max_street_ratio = 60.0
+min_days_to_expiry = 30
+max_iv = 90.0
+min_leverage = 2.0
+max_leverage = 12.0
+max_moneyness_abs_pct = 12.0
+
+[signals]
+buy_confidence_threshold = 70
+take_profit_pct = 25.0
+stop_loss_pct = -12.0
+
+[summary]
+enabled = true
+quiet_minutes = 30
+lookback_minutes = 30
+min_snapshots = 2
+include_scenes = ["trade_signal", "intraday_summary"]
+
+[feishu]
+webhook_url_env = "FEISHU_WEBHOOK_URL"
+secret_env = "FEISHU_SECRET"
+
+[ai]
+enabled_env = "AI_ENABLED"
+provider_env = "AI_PROVIDER"
+api_key_env = "DEEPSEEK_API_KEY"
+model_env = "AI_MODEL"
+daily_limit_env = "AI_DAILY_LIMIT"
+cooldown_minutes_env = "AI_COOLDOWN_MINUTES"
+min_confidence_env = "AI_MIN_CONFIDENCE"
+style_env = "AI_STYLE"
+default_enabled = false
+default_provider = "deepseek"
+default_model = "deepseek-v4-flash"
+default_daily_limit = 200
+default_cooldown_minutes = 15
+default_min_confidence = 72
+default_style = "TRADER_BRIEF"
